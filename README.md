@@ -1,4 +1,4 @@
-# Asfoura  AsfourA
+# Asfoura / AsfourA
 
-Functional as a team/project management platform.
+A Functional team/project management platform.
 Mz.
