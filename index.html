@@ -324,7 +324,7 @@ loginForm.addEventListener('submit', (e) => {
       successMessage.style.display = 'block';
       console.log('Login successful:', userCredential.user);
       setTimeout(() => {
-        alert('Successfully logged in! In a real app, you would be redirected to the dashboard.');
+        window.location.href = 'dashboard.html';
       }, 2000);
     })
     .catch((error) => {
