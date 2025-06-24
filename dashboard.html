@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="casf.ico">
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --info: #4895ef;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fb;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo i {
+            font-size: 28px;
+            color: var(--primary);
+        }
+
+        .logo h1 {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        /* Stats */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .projects-icon {
+            background: rgba(67, 97, 238, 0.15);
+            color: var(--primary);
+        }
+
+        .tasks-icon {
+            background: rgba(244, 37, 133, 0.15);
+            color: var(--danger);
+        }
+
+        .done-icon {
+            background: rgba(76, 201, 240, 0.15);
+            color: var(--success);
+        }
+
+        .stat-title {
+            font-size: 15px;
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--dark);
+            margin: 5px 0;
+        }
+
+        .stat-change {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--success);
+        }
+
+        /* Content */
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d31668;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: rgba(67, 97, 238, 0.1);
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 180px;
+        }
+
+        .filter-label {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: var(--gray);
+        }
+
+        .filter-select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+        }
+
+        .chip-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .chip {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .chip.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            transition: var(--transition);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            padding: 20px 20px 15px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+
+        .card-subtitle {
+            font-size: 14px;
+            color: var(--gray);
+            margin-bottom: 15px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-footer {
+            padding: 15px 20px;
+            background: var(--light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-actions {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .edit-btn {
+            color: var(--primary);
+        }
+
+        .delete-btn {
+            color: var(--danger);
+        }
+
+        .date {
+            font-size: 13px;
+            color: var(--gray);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .team-badge {
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+        }
+
+        .priority-badge {
+            background: rgba(244, 37, 133, 0.1);
+            color: var(--danger);
+        }
+
+        .medium-badge {
+            background: rgba(248, 150, 30, 0.1);
+            color: var(--warning);
+        }
+
+        .normal-badge {
+            background: rgba(76, 201, 240, 0.1);
+            color: var(--success);
+        }
+
+        .progress-container {
+            margin: 15px 0;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--light-gray);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: var(--primary);
+            transition: width 0.5s ease;
+        }
+
+        /* Modals */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            transform: translateY(20px);
+            transition: var(--transition);
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .modal-subtitle {
+            font-size: 16px;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: var(--gray);
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            color: var(--dark);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .team-tag {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin: 0 5px 5px 0;
+            font-size: 14px;
+        }
+
+        .team-tag .remove-tag {
+            margin-left: 8px;
+            cursor: pointer;
+            color: var(--primary);
+            opacity: 0.7;
+        }
+
+        .team-tag .remove-tag:hover {
+            opacity: 1;
+        }
+
+        /* Utilities */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: var(--transition);
+        }
+
+        .back-btn:hover {
+            color: var(--secondary);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            grid-column: 1 / -1;
+        }
+
+        .no-results i {
+            font-size: 48px;
+            color: var(--light-gray);
+            margin-bottom: 15px;
+        }
+
+        .no-results p {
+            color: var(--gray);
+            font-size: 18px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            grid-column: 1 / -1;
+        }
+
+        .loading i {
+            font-size: 40px;
+            color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .content-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .modal-content {
+                width: 95%;
+            }
+            
+            .filters {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="logo.png" style="width: 200px; display: block; margin: 0 auto 20px;" />
+                    <p>Mz 9alelkom 5alsouni :)</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Stats Section -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Total Projects</div>
+                    <div class="stat-icon projects-icon">
+                        <i class="fas fa-folder"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="total-projects">0</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Completed Projects</div>
+                    <div class="stat-icon done-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="completed-projects">0</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Total Tasks</div>
+                    <div class="stat-icon tasks-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="total-tasks">0</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-title">Completed Tasks</div>
+                    <div class="stat-icon done-icon">
+                        <i class="fas fa-check-double"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="completed-tasks">0</div>
+            </div>
+        </div>
+        
+        <!-- Dashboard View -->
+        <div id="dashboard-view">
+            <div class="content-header">
+                <h2 class="section-title">Projects</h2>
+                <button class="btn btn-primary" id="create-project-btn">
+                    <i class="fas fa-plus"></i> New Project
+                </button>
+            </div>
+            
+            <!-- Filters -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label class="filter-label">Filter by Team</label>
+                    <select class="filter-select" id="project-team-filter">
+                        <option value="">All Teams</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Filter by Deadline</label>
+                    <select class="filter-select" id="project-deadline-filter">
+                        <option value="">All Dates</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="overdue">Overdue</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="grid" id="projects-container">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading projects...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Project Details View (hidden by default) -->
+        <div id="project-details-view" style="display: none;">
+            <div class="back-btn" id="back-to-dashboard">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </div>
+            
+            <div class="content-header">
+                <div>
+                    <h2 class="section-title" id="project-title">Project Details</h2>
+                    <p id="project-description"></p>
+                </div>
+                <button class="btn btn-primary" id="create-task-btn">
+                    <i class="fas fa-plus"></i> New Task
+                </button>
+            </div>
+            
+            <!-- Task Filters -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label class="filter-label">Filter by Priority</label>
+                    <div class="chip-container" id="task-priority-chips">
+                        <div class="chip active" data-priority="all">All</div>
+                        <div class="chip" data-priority="urgent">Urgent</div>
+                        <div class="chip" data-priority="medium">Medium</div>
+                        <div class="chip" data-priority="normal">Normal</div>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Filter by Team</label>
+                    <select class="filter-select" id="task-team-filter">
+                        <option value="">All Teams</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="grid" id="tasks-container">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading tasks...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Project Modal -->
+    <div class="modal" id="project-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="project-modal-title">Create Project</h3>
+                <button class="modal-close" id="close-project-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="project-form">
+                    <input type="hidden" id="project-id">
+                    <div class="form-group">
+                        <label class="form-label" for="project-name">Project Name</label>
+                        <input type="text" class="form-control" id="project-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="project-description">Description</label>
+                        <textarea class="form-control" id="project-description-input"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Teams</label>
+                        <div class="team-input-container">
+                            <input type="text" class="form-control" id="project-team-input" placeholder="Enter team name and press Enter">
+                        </div>
+                        <div id="project-teams-tags" class="badge-container"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="project-start">Start Date</label>
+                            <input type="date" class="form-control" id="project-start" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="project-deadline">Deadline</label>
+                            <input type="date" class="form-control" id="project-deadline" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="delete-project-btn" style="display: none;">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                <button class="btn btn-outline" id="cancel-project-btn">Cancel</button>
+                <button class="btn btn-primary" id="save-project-btn">Save Project</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Task Modal -->
+    <div class="modal" id="task-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="task-modal-title">Create Task</h3>
+                <button class="modal-close" id="close-task-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="task-form">
+                    <input type="hidden" id="task-id">
+                    <input type="hidden" id="task-project-id">
+                    <div class="form-group">
+                        <label class="form-label" for="task-name">Task Name</label>
+                        <input type="text" class="form-control" id="task-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="task-description">Description</label>
+                        <textarea class="form-control" id="task-description"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="task-priority">Priority</label>
+                            <select class="form-control" id="task-priority" required>
+                                <option value="normal">Normal</option>
+                                <option value="medium">Medium</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="task-deadline">Deadline</label>
+                            <input type="date" class="form-control" id="task-deadline" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Teams</label>
+                        <div class="team-input-container">
+                            <input type="text" class="form-control" id="task-team-input" placeholder="Enter team name and press Enter">
+                        </div>
+                        <div id="task-teams-tags" class="badge-container"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Team Progress</label>
+                        <div id="task-progress-container"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="delete-task-btn" style="display: none;">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                <button class="btn btn-outline" id="cancel-task-btn">Cancel</button>
+                <button class="btn btn-primary" id="save-task-btn">Save Task</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Task Detail Modal -->
+    <div class="modal" id="task-detail-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="task-detail-name">Task Details</h3>
+                    <p class="modal-subtitle" id="task-detail-project">Project: Loading...</p>
+                </div>
+                <button class="modal-close" id="close-task-detail">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <p id="task-detail-description"></p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <span id="task-detail-priority" class="badge normal-badge">Normal</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Deadline</label>
+                    <p id="task-detail-deadline"></p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Assigned Teams</label>
+                    <div id="task-detail-teams" class="badge-container"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Team Progress</label>
+                    <div id="task-detail-progress"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="close-task-detail-btn">Close</button>
+                <button class="btn btn-primary" id="edit-task-btn">Edit Task</button>
+                <button class="btn btn-danger" id="delete-task-detail-btn">Delete Task</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+import { 
+    getAuth, 
+    onAuthStateChanged,
+    signOut
+} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+import { 
+    getFirestore, 
+    doc, 
+    getDoc, 
+    collection, 
+    onSnapshot,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    Timestamp,
+    query,
+    where
+} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyCWGNNGukVEHUkPnJh6hue0yhgx7B-7a6w",
+    authDomain: "asfoura-25.firebaseapp.com",
+    projectId: "asfoura-25",
+    storageBucket: "asfoura-25.appspot.com",
+    messagingSenderId: "361486675942",
+    appId: "1:361486675942:web:9146297c056fde757bb027",
+    measurementId: "G-M9VE1YFX92"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// DOM Elements
+const dashboardView = document.getElementById('dashboard-view');
+const projectDetailsView = document.getElementById('project-details-view');
+const projectsContainer = document.getElementById('projects-container');
+const tasksContainer = document.getElementById('tasks-container');
+const backToDashboard = document.getElementById('back-to-dashboard');
+const createProjectBtn = document.getElementById('create-project-btn');
+const createTaskBtn = document.getElementById('create-task-btn');
+const projectModal = document.getElementById('project-modal');
+const taskModal = document.getElementById('task-modal');
+const taskDetailModal = document.getElementById('task-detail-modal');
+const projectForm = document.getElementById('project-form');
+const taskForm = document.getElementById('task-form');
+const saveProjectBtn = document.getElementById('save-project-btn');
+const saveTaskBtn = document.getElementById('save-task-btn');
+const deleteProjectBtn = document.getElementById('delete-project-btn');
+const deleteTaskBtn = document.getElementById('delete-task-btn');
+const projectTeamsTags = document.getElementById('project-teams-tags');
+const taskTeamsTags = document.getElementById('task-teams-tags');
+const projectTeamInput = document.getElementById('project-team-input');
+const taskTeamInput = document.getElementById('task-team-input');
+const taskProgressContainer = document.getElementById('task-progress-container');
+const projectTitle = document.getElementById('project-title');
+const projectDescription = document.getElementById('project-description');
+const taskDetailName = document.getElementById('task-detail-name');
+const taskDetailProject = document.getElementById('task-detail-project');
+const taskDetailDescription = document.getElementById('task-detail-description');
+const taskDetailDeadline = document.getElementById('task-detail-deadline');
+const taskDetailPriority = document.getElementById('task-detail-priority');
+const taskDetailTeams = document.getElementById('task-detail-teams');
+const taskDetailProgress = document.getElementById('task-detail-progress');
+const editTaskBtn = document.getElementById('edit-task-btn');
+const deleteTaskDetailBtn = document.getElementById('delete-task-detail-btn');
+const projectTeamFilter = document.getElementById('project-team-filter');
+const projectDeadlineFilter = document.getElementById('project-deadline-filter');
+const taskPriorityChips = document.getElementById('task-priority-chips');
+const taskTeamFilter = document.getElementById('task-team-filter');
+const logoutBtn = document.getElementById('logout-btn');
+const accessDeniedSection = document.getElementById('access-denied');
+
+// State
+let currentProjectId = null;
+let projects = [];
+let tasks = [];
+let currentTask = null;
+let allTeams = new Set();
+let filters = {
+    projectTeam: '',
+    projectDeadline: '',
+    taskPriority: 'all',
+    taskTeam: ''
+};
+
+// Supervisor-only initialization
+async function initApp() {
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (userDocSnap.exists()) {
+                const userData = userDocSnap.data();
+                if (userData.role === 'supervisor') {
+                    console.log("✅ Logged in as supervisor");
+                    setupFirestoreListeners();
+                    initializeDashboardEvents();
+                    dashboardView.style.display = 'block';
+                    accessDeniedSection.style.display = 'none';
+                } else {
+                    // Not a supervisor
+                    dashboardView.style.display = 'none';
+                    projectDetailsView.style.display = 'none';
+                    accessDeniedSection.style.display = 'block';
+                }
+            } else {
+                alert("❌ No user data found. Contact admin.");
+                window.location.href = 'login.html';
+            }
+        } else {
+            window.location.href = 'login.html';
+        }
+    });
+}
+
+// Event listeners setup
+function initializeDashboardEvents() {
+    createProjectBtn.addEventListener('click', () => openProjectModal());
+    createTaskBtn.addEventListener('click', () => openTaskModal());
+    backToDashboard.addEventListener('click', showDashboard);
+    logoutBtn.addEventListener('click', handleLogout);
+
+    document.getElementById('close-project-modal').addEventListener('click', () => projectModal.classList.remove('active'));
+    document.getElementById('close-task-modal').addEventListener('click', () => taskModal.classList.remove('active'));
+    document.getElementById('close-task-detail').addEventListener('click', () => taskDetailModal.classList.remove('active'));
+    document.getElementById('close-task-detail-btn').addEventListener('click', () => taskDetailModal.classList.remove('active'));
+    document.getElementById('cancel-project-btn').addEventListener('click', () => projectModal.classList.remove('active'));
+    document.getElementById('cancel-task-btn').addEventListener('click', () => taskModal.classList.remove('active'));
+
+    saveProjectBtn.addEventListener('click', saveProject);
+    saveTaskBtn.addEventListener('click', saveTask);
+    deleteProjectBtn.addEventListener('click', () => deleteProject());
+    deleteTaskBtn.addEventListener('click', () => deleteTask());
+    deleteTaskDetailBtn.addEventListener('click', () => deleteTask());
+
+    editTaskBtn.addEventListener('click', () => {
+        taskDetailModal.classList.remove('active');
+        openTaskModal(currentTask);
+    });
+
+    projectTeamInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addTeamTag(projectTeamInput.value.trim(), projectTeamsTags);
+            projectTeamInput.value = '';
+        }
+    });
+
+    taskTeamInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addTeamTag(taskTeamInput.value.trim(), taskTeamsTags);
+            taskTeamInput.value = '';
+        }
+    });
+
+    projectTeamFilter.addEventListener('change', (e) => {
+        filters.projectTeam = e.target.value;
+        renderProjects();
+    });
+
+    projectDeadlineFilter.addEventListener('change', (e) => {
+        filters.projectDeadline = e.target.value;
+        renderProjects();
+    });
+
+    taskPriorityChips.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            taskPriorityChips.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            filters.taskPriority = chip.dataset.priority;
+            renderProjectTasks(currentProjectId);
+        });
+    });
+
+    taskTeamFilter.addEventListener('change', (e) => {
+        filters.taskTeam = e.target.value;
+        renderProjectTasks(currentProjectId);
+    });
+}
+
+// Add team tag to container
+function addTeamTag(teamName, container) {
+    if (!teamName) return;
+    
+    const tag = document.createElement('div');
+    tag.className = 'team-tag';
+    tag.innerHTML = `
+        ${teamName}
+        <span class="remove-tag">&times;</span>
+    `;
+    
+    tag.querySelector('.remove-tag').addEventListener('click', () => {
+        tag.remove();
+    });
+    
+    container.appendChild(tag);
+}
+
+// Get teams from tags container
+function getTeamsFromTags(container) {
+    const tags = container.querySelectorAll('.team-tag');
+    return Array.from(tags).map(tag => tag.childNodes[0].textContent.trim());
+}
+
+// Setup Firestore listeners
+function setupFirestoreListeners() {
+    // Projects listener
+    const projectsQuery = query(collection(db, 'projects'));
+    onSnapshot(projectsQuery, (snapshot) => {
+        projects = [];
+        allTeams.clear();
+        
+        snapshot.forEach((doc) => {
+            const project = { id: doc.id, ...doc.data() };
+            projects.push(project);
+            
+            // Add teams to global list
+            if (project.teams) {
+                project.teams.forEach(team => allTeams.add(team));
+            }
+        });
+        
+        updateTeamFilters();
+        renderProjects();
+        updateStats();
+    });
+
+    // Tasks listener
+    const tasksQuery = query(collection(db, 'tasks'));
+    onSnapshot(tasksQuery, (snapshot) => {
+        tasks = [];
+        snapshot.forEach((doc) => {
+            tasks.push({ id: doc.id, ...doc.data() });
+        });
+        
+        if (currentProjectId) {
+            renderProjectTasks(currentProjectId);
+        }
+        
+        updateStats();
+    });
+}
+
+// Update team filter dropdowns
+function updateTeamFilters() {
+    // Clear existing options except the first one
+    while (projectTeamFilter.options.length > 1) {
+        projectTeamFilter.remove(1);
+    }
+    
+    while (taskTeamFilter.options.length > 1) {
+        taskTeamFilter.remove(1);
+    }
+    
+    // Add "All Teams" option
+    const allOption1 = document.createElement('option');
+    allOption1.value = '';
+    allOption1.textContent = 'All Teams';
+    projectTeamFilter.appendChild(allOption1);
+    
+    const allOption2 = document.createElement('option');
+    allOption2.value = '';
+    allOption2.textContent = 'All Teams';
+    taskTeamFilter.appendChild(allOption2);
+    
+    // Add teams to filters
+    allTeams.forEach(team => {
+        const option1 = document.createElement('option');
+        option1.value = team;
+        option1.textContent = team;
+        projectTeamFilter.appendChild(option1);
+        
+        const option2 = document.createElement('option');
+        option2.value = team;
+        option2.textContent = team;
+        taskTeamFilter.appendChild(option2);
+    });
+}
+
+// Update dashboard stats
+function updateStats() {
+    // Total projects
+    document.getElementById('total-projects').textContent = projects.length;
+    
+    // Completed projects (all tasks 100% progress)
+    const completedProjects = projects.filter(project => {
+        const projectTasks = tasks.filter(task => task.projectid === project.id);
+        if (projectTasks.length === 0) return false;
+        return projectTasks.every(isTaskCompleted);
+    }).length;
+    document.getElementById('completed-projects').textContent = completedProjects;
+    
+    // Total tasks
+    document.getElementById('total-tasks').textContent = tasks.length;
+    
+    // Completed tasks (100% progress)
+    const completedTasks = tasks.filter(isTaskCompleted).length;
+    document.getElementById('completed-tasks').textContent = completedTasks;
+}
+
+// Check if a task is completed (all teams at 100%)
+function isTaskCompleted(task) {
+    if (!task.progress) return false;
+    return Object.values(task.progress).every(progress => progress === 100);
+}
+
+// Render projects
+function renderProjects() {
+    if (projects.length === 0) {
+        projectsContainer.innerHTML = `
+            <div class="no-results">
+                <i class="fas fa-folder-open"></i>
+                <p>No projects found. Create your first project!</p>
+            </div>
+        `;
+        return;
+    }
+
+    projectsContainer.innerHTML = '';
+    
+    // Apply filters
+    let filteredProjects = [...projects];
+    
+    if (filters.projectTeam) {
+        filteredProjects = filteredProjects.filter(project => 
+            project.teams && project.teams.includes(filters.projectTeam)
+        );
+    }
+    
+    if (filters.projectDeadline) {
+        const today = new Date();
+        filteredProjects = filteredProjects.filter(project => {
+            if (!project.deadline) return false;
+            const deadline = project.deadline.toDate();
+            
+            switch (filters.projectDeadline) {
+                case 'week':
+                    const nextWeek = new Date();
+                    nextWeek.setDate(today.getDate() + 7);
+                    return deadline >= today && deadline <= nextWeek;
+                case 'month':
+                    const nextMonth = new Date();
+                    nextMonth.setMonth(today.getMonth() + 1);
+                    return deadline >= today && deadline <= nextMonth;
+                case 'overdue':
+                    return deadline < today;
+                default:
+                    return true;
+            }
+        });
+    }
+    
+    filteredProjects.forEach(project => {
+        const projectTasks = tasks.filter(task => task.projectid === project.id);
+        const completedTasks = projectTasks.filter(isTaskCompleted).length;
+        const progress = projectTasks.length > 0 ? Math.round((completedTasks / projectTasks.length) * 100) : 0;
+        
+        const projectCard = document.createElement('div');
+        projectCard.className = 'card';
+        projectCard.innerHTML = `
+            <div class="card-actions">
+                <div class="action-btn edit-btn" data-id="${project.id}">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div class="action-btn delete-btn" data-id="${project.id}">
+                    <i class="fas fa-trash"></i>
+                </div>
+            </div>
+            <div class="card-header">
+                <h3 class="card-title">${project.name}</h3>
+                <p class="card-subtitle">${project.description || 'No description'}</p>
+            </div>
+            <div class="card-body">
+                <div class="badge-container">
+                    ${project.teams && project.teams.map(team => `
+                        <span class="badge team-badge">${team}</span>
+                    `).join('')}
+                </div>
+                <div class="progress-container">
+                    <div class="progress-header">
+                        <span>Progress</span>
+                        <span>${progress}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress}%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="date">
+                    <i class="far fa-calendar"></i> 
+                    ${formatDate(project.deadline)}
+                </div>
+                <div>${projectTasks.length} tasks</div>
+            </div>
+        `;
+        
+        projectCard.addEventListener('click', (e) => {
+            // Don't trigger card click if action button was clicked
+            if (e.target.closest('.card-actions')) return;
+            showProjectDetails(project.id);
+        });
+        
+        // Add event listeners to action buttons
+        projectCard.querySelector('.edit-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const projectId = e.currentTarget.dataset.id;
+            const project = projects.find(p => p.id === projectId);
+            if (project) openProjectModal(project);
+        });
+        
+        projectCard.querySelector('.delete-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const projectId = e.currentTarget.dataset.id;
+            const project = projects.find(p => p.id === projectId);
+            if (project) {
+                if (confirm('Are you sure you want to delete this project? All associated tasks will also be deleted.')) {
+                    deleteProject(project);
+                }
+            }
+        });
+        
+        projectsContainer.appendChild(projectCard);
+    });
+}
+
+// Show project details
+function showProjectDetails(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+    
+    currentProjectId = projectId;
+    projectTitle.textContent = project.name;
+    projectDescription.textContent = project.description || '';
+    
+    dashboardView.style.display = 'none';
+    projectDetailsView.style.display = 'block';
+    
+    renderProjectTasks(projectId);
+}
+
+// Render tasks for a project
+function renderProjectTasks(projectId) {
+    let projectTasks = tasks.filter(task => task.projectid === projectId);
+    
+    // Apply filters
+    if (filters.taskPriority !== 'all') {
+        projectTasks = projectTasks.filter(task => task.priority === filters.taskPriority);
+    }
+    
+    if (filters.taskTeam) {
+        projectTasks = projectTasks.filter(task => 
+            task.teams && task.teams.includes(filters.taskTeam)
+        );
+    }
+    
+    if (projectTasks.length === 0) {
+        tasksContainer.innerHTML = `
+            <div class="no-results">
+                <i class="fas fa-clipboard-list"></i>
+                <p>No tasks found. Create your first task!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    tasksContainer.innerHTML = '';
+    
+    projectTasks.forEach(task => {
+        const progressValues = task.progress ? Object.values(task.progress) : [];
+        const totalProgress = progressValues.length > 0 ? 
+            Math.round(progressValues.reduce((a, b) => a + b, 0) / progressValues.length) : 0;
+        
+        const taskCard = document.createElement('div');
+        taskCard.className = 'card';
+        taskCard.innerHTML = `
+            <div class="card-header">
+                <h3 class="card-title">${task.name}</h3>
+            </div>
+            <div class="card-body">
+                <div class="badge-container">
+                    <span class="badge ${task.priority === 'urgent' ? 'priority-badge' : 
+                        task.priority === 'medium' ? 'medium-badge' : 'normal-badge'}">
+                        ${task.priority}
+                    </span>
+                    ${task.teams && task.teams.map(team => `
+                        <span class="badge team-badge">${team}</span>
+                    `).join('')}
+                </div>
+                <div class="progress-container">
+                    <div class="progress-header">
+                        <span>Progress</span>
+                        <span>${totalProgress}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${totalProgress}%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="date">
+                    <i class="far fa-calendar"></i> 
+                    ${formatDate(task.deadline)}
+                </div>
+            </div>
+        `;
+        
+        taskCard.addEventListener('click', () => openTaskDetailModal(task));
+        tasksContainer.appendChild(taskCard);
+    });
+}
+
+// Show dashboard view
+function showDashboard() {
+    projectDetailsView.style.display = 'none';
+    dashboardView.style.display = 'block';
+    currentProjectId = null;
+    
+    // Reset task filters
+    if (taskPriorityChips) {
+        taskPriorityChips.querySelector('.chip[data-priority="all"]').classList.add('active');
+        filters.taskPriority = 'all';
+    }
+    
+    if (taskTeamFilter) {
+        taskTeamFilter.value = '';
+        filters.taskTeam = '';
+    }
+}
+
+// Open project modal
+function openProjectModal(project = null) {
+    const isEdit = !!project;
+    
+    // Reset form
+    projectForm.reset();
+    projectTeamsTags.innerHTML = '';
+    
+    // Set modal title
+    document.getElementById('project-modal-title').textContent = 
+        isEdit ? 'Edit Project' : 'Create Project';
+    
+    // Show/hide delete button
+    deleteProjectBtn.style.display = isEdit ? 'block' : 'none';
+    
+    // Populate form if editing
+    if (isEdit) {
+        document.getElementById('project-id').value = project.id;
+        document.getElementById('project-name').value = project.name;
+        document.getElementById('project-description-input').value = project.description || '';
+        document.getElementById('project-start').value = formatDateForInput(project.createdat);
+        document.getElementById('project-deadline').value = formatDateForInput(project.deadline);
+        
+        // Add team tags
+        if (project.teams) {
+            project.teams.forEach(team => {
+                addTeamTag(team, projectTeamsTags);
+            });
+        }
+    } else {
+        // Set current date as default
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('project-start').value = today;
+    }
+    
+    // Show modal
+    projectModal.classList.add('active');
+}
+
+// Open task modal
+function openTaskModal(task = null) {
+    const isEdit = !!task;
+    
+    // Reset form
+    taskForm.reset();
+    taskTeamsTags.innerHTML = '';
+    taskProgressContainer.innerHTML = '';
+    
+    // Set modal title
+    document.getElementById('task-modal-title').textContent = 
+        isEdit ? 'Edit Task' : 'Create Task';
+    
+    // Show/hide delete button
+    deleteTaskBtn.style.display = isEdit ? 'block' : 'none';
+    
+    // Set project ID
+    document.getElementById('task-project-id').value = currentProjectId || '';
+    
+    // Populate form if editing
+    if (isEdit) {
+        document.getElementById('task-id').value = task.id;
+        document.getElementById('task-name').value = task.name;
+        document.getElementById('task-description').value = task.description || '';
+        document.getElementById('task-priority').value = task.priority || 'normal';
+        document.getElementById('task-deadline').value = formatDateForInput(task.deadline);
+        
+        // Add team tags
+        if (task.teams) {
+            task.teams.forEach(team => {
+                addTeamTag(team, taskTeamsTags);
+                addProgressInput(team, task.progress?.[team] || 0);
+            });
+        }
+    } else {
+        // Set current date as default
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('task-deadline').value = today;
+    }
+    
+    // Show modal
+    taskModal.classList.add('active');
+}
+
+// Add progress input for a team
+function addProgressInput(team, progress = 0) {
+    const progressGroup = document.createElement('div');
+    progressGroup.className = 'form-group';
+    progressGroup.innerHTML = `
+        <label class="form-label">${team}</label>
+        <input type="range" min="0" max="100" value="${progress}" 
+            class="form-control" data-team="${team}">
+        <div class="progress-header">
+            <span>0%</span>
+            <span>${progress}%</span>
+            <span>100%</span>
+        </div>
+    `;
+    
+    const slider = progressGroup.querySelector('input');
+    slider.addEventListener('input', () => {
+        progressGroup.querySelector('.progress-header span:nth-child(2)').textContent = `${slider.value}%`;
+    });
+    
+    taskProgressContainer.appendChild(progressGroup);
+}
+
+// Open task detail modal
+function openTaskDetailModal(task) {
+    currentTask = task;
+    
+    // Populate task details
+    taskDetailName.textContent = task.name;
+    taskDetailDescription.textContent = task.description || 'No description provided';
+    taskDetailDeadline.textContent = formatDate(task.deadline);
+    
+    // Set priority badge
+    taskDetailPriority.className = `badge ${task.priority === 'urgent' ? 'priority-badge' : 
+        task.priority === 'medium' ? 'medium-badge' : 'normal-badge'}`;
+    taskDetailPriority.textContent = task.priority;
+    
+    // Set project name
+    const project = projects.find(p => p.id === task.projectid);
+    taskDetailProject.textContent = project ? `Project: ${project.name}` : 'Project: Unknown';
+    
+    // Set teams
+    taskDetailTeams.innerHTML = '';
+    if (task.teams) {
+        task.teams.forEach(team => {
+            const tag = document.createElement('span');
+            tag.className = 'badge team-badge';
+            tag.textContent = team;
+            taskDetailTeams.appendChild(tag);
+        });
+    }
+    
+    // Set progress bars
+    taskDetailProgress.innerHTML = '';
+    if (task.progress) {
+        for (const [team, progress] of Object.entries(task.progress)) {
+            const progressGroup = document.createElement('div');
+            progressGroup.className = 'progress-container';
+            progressGroup.innerHTML = `
+                <div class="progress-header">
+                    <span>${team}</span>
+                    <span>${progress}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${progress}%"></div>
+                </div>
+            `;
+            taskDetailProgress.appendChild(progressGroup);
+        }
+    }
+    
+    // Show modal
+    taskDetailModal.classList.add('active');
+}
+
+// Save project
+async function saveProject() {
+    const id = document.getElementById('project-id').value;
+    const name = document.getElementById('project-name').value;
+    const description = document.getElementById('project-description-input').value;
+    const startDate = document.getElementById('project-start').value;
+    const deadline = document.getElementById('project-deadline').value;
+    
+    // Get teams from tags
+    const teams = getTeamsFromTags(projectTeamsTags);
+    
+    if (!name) {
+        alert('Project name is required');
+        return;
+    }
+    
+    if (!startDate || !deadline) {
+        alert('Start date and deadline are required');
+        return;
+    }
+    
+    if (teams.length === 0) {
+        alert('At least one team is required');
+        return;
+    }
+    
+    const projectData = {
+        name,
+        description,
+        teams,
+        createdat: Timestamp.fromDate(new Date(startDate)),
+        deadline: Timestamp.fromDate(new Date(deadline))
+    };
+    
+    try {
+        if (id) {
+            // Update existing project
+            const projectRef = doc(db, 'projects', id);
+            await updateDoc(projectRef, projectData);
+        } else {
+            // Create new project
+            await addDoc(collection(db, 'projects'), projectData);
+        }
+        
+        // Close modal
+        projectModal.classList.remove('active');
+    } catch (error) {
+        console.error('Error saving project:', error);
+        alert('Failed to save project. Please try again.');
+    }
+}
+
+// Save task
+async function saveTask() {
+    const id = document.getElementById('task-id').value;
+    const projectId = document.getElementById('task-project-id').value;
+    const name = document.getElementById('task-name').value;
+    const description = document.getElementById('task-description').value;
+    const priority = document.getElementById('task-priority').value;
+    const deadline = document.getElementById('task-deadline').value;
+    
+    // Get teams from tags
+    const teams = getTeamsFromTags(taskTeamsTags);
+    
+    // Get progress values
+    const progress = {};
+    const progressSliders = taskProgressContainer.querySelectorAll('input[type="range"]');
+    progressSliders.forEach(slider => {
+        const team = slider.dataset.team;
+        progress[team] = parseInt(slider.value);
+    });
+    
+    if (!name) {
+        alert('Task name is required');
+        return;
+    }
+    
+    if (!projectId) {
+        alert('No project selected');
+        return;
+    }
+    
+    if (!deadline) {
+        alert('Deadline is required');
+        return;
+    }
+    
+    if (teams.length === 0) {
+        alert('At least one team is required');
+        return;
+    }
+    
+    const taskData = {
+        name,
+        description,
+        priority,
+        projectid: projectId,
+        teams,
+        progress,
+        createdat: Timestamp.fromDate(new Date()),
+        deadline: Timestamp.fromDate(new Date(deadline))
+    };
+    
+    try {
+        if (id) {
+            // Update existing task
+            const taskRef = doc(db, 'tasks', id);
+            await updateDoc(taskRef, taskData);
+        } else {
+            // Create new task
+            await addDoc(collection(db, 'tasks'), taskData);
+        }
+        
+        // Close modal
+        taskModal.classList.remove('active');
+    } catch (error) {
+        console.error('Error saving task:', error);
+        alert('Failed to save task. Please try again.');
+    }
+}
+
+// Delete project
+async function deleteProject(project = null) {
+    let projectId;
+    if (project) {
+        projectId = project.id;
+    } else {
+        projectId = document.getElementById('project-id').value;
+    }
+
+    if (!projectId) return;
+
+    const projectToDelete = projects.find(p => p.id === projectId);
+    if (!projectToDelete) {
+        alert('Project not found');
+        return;
+    }
+
+    if (confirm(`Are you sure you want to delete the project "${projectToDelete.name}"? All associated tasks will also be deleted.`)) {
+        try {
+            // Delete project
+            await deleteDoc(doc(db, 'projects', projectId));
+            
+            // Delete associated tasks
+            const projectTasks = tasks.filter(task => task.projectid === projectId);
+            const deletePromises = projectTasks.map(task => 
+                deleteDoc(doc(db, 'tasks', task.id))
+            );
+            await Promise.all(deletePromises);
+            
+            // Close modal and show dashboard if needed
+            if (projectModal.classList.contains('active')) {
+                projectModal.classList.remove('active');
+            }
+            
+            if (currentProjectId === projectId) {
+                showDashboard();
+            }
+        } catch (error) {
+            console.error('Error deleting project:', error);
+            alert('Failed to delete project. Please try again.');
+        }
+    }
+}
+
+// Delete task
+async function deleteTask() {
+    const id = currentTask ? currentTask.id : document.getElementById('task-id').value;
+    if (!id) return;
+    
+    if (confirm('Are you sure you want to delete this task?')) {
+        try {
+            await deleteDoc(doc(db, 'tasks', id));
+            
+            if (taskModal.classList.contains('active')) {
+                taskModal.classList.remove('active');
+            }
+            
+            if (taskDetailModal.classList.contains('active')) {
+                taskDetailModal.classList.remove('active');
+            }
+            
+            // Update local tasks
+            tasks = tasks.filter(task => task.id !== id);
+            if (currentProjectId) {
+                renderProjectTasks(currentProjectId);
+            }
+        } catch (error) {
+            console.error('Error deleting task:', error);
+            alert('Failed to delete task. Please try again.');
+        }
+    }
+}
+
+// Format date for display
+function formatDate(timestamp) {
+    if (!timestamp) return 'N/A';
+    
+    const date = timestamp.toDate();
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+// Format date for input field
+function formatDateForInput(timestamp) {
+    if (!timestamp) return '';
+    
+    const date = timestamp.toDate();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+}
+
+// Handle logout
+async function handleLogout() {
+    try {
+        await signOut(auth);
+        window.location.href = 'login.html';
+    } catch (error) {
+        console.error('Logout error:', error);
+        alert('Failed to logout. Please try again.');
+    }
+}
+
+// Initialize the app
+document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
