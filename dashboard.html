@@ -1028,7 +1028,7 @@ async function initApp() {
 
       if (userDocSnap.exists()) {
         const userData = userDocSnap.data();
-        console.log(userSnap.data());
+        console.log(userData.role);
         if (userData.role === 'supervisor') {
           console.log("Logged in as supervisor");
 
